@@ -2,7 +2,7 @@ using Pkg
 using Pkg: TOML
 using Pkg: Operations, Types, API
 using UUIDs
-
+using Base: PkgId
 #=
 genfile & create_project_from_require have been taken from the PR
 https://github.com/JuliaLang/PkgDev.jl/pull/144
@@ -128,30 +128,15 @@ function snoop2root(path)
 end
 
 function resolve_package(ctx, pkg::String)
-    manifest = ctx.env.manifest
-    for (uuid, pkgspec) in manifest
-        if pkgspec.name == pkg
-            return Base.PkgId(uuid, pkg)
-        end
-    end
-    return nothing
+    return Base.identify_package(pkg)
 end
 
 function resolve_packages(ctx, pkgs::Vector{String})
-    manifest = ctx.env.manifest
-    result = Set{Pkg.Types.PackageSpec}()
-    pkgs_copy = copy(pkgs)
-    for (uuid, pkgspec) in manifest
-        idx = findfirst(x-> string(pkgspec.name) === x, pkgs_copy)
-        if idx !== nothing
-            push!(result, PackageSpec(name = pkgs_copy[idx], uuid = uuid))
-            splice!(pkgs_copy, idx)
-        end
-    end
-    if !isempty(pkgs_copy)
-        error("Could not resolve the following packages: $(pkgs_copy)")
-    end
-    return result
+    return Set(map(pkgs) do pkg
+        uuid = Base.identify_package(pkg)
+        uuid === nothing && error("Could not find package $pkg. Please install")
+        Pkg.Types.PackageSpec(uuid = uuid.uuid, name = pkg)
+    end)
 end
 
 
@@ -166,27 +151,30 @@ function resolve_packages(ctx, pkgs::Set{Base.UUID})
         end
     end
     if !isempty(pkgs_copy)
+        for env in Base.load_path()
+
+        end
         error("Could not resolve the following packages: $(pkgs_copy)")
     end
     return result
 end
 
-get_deps(manifest, uuid) = manifest[uuid].deps
+get_deps(manifest, pkgid) = manifest[pkgid.uuid].deps
 
-function topo_deps(manifest, uuids::Vector{UUID})
-    result = Dict{UUID, Any}()
-    for uuid in uuids
-        get!(result, uuid) do
-            topo_deps(manifest, uuid)
+function topo_deps(manifest, uuids::Vector{PkgId})
+    result = Dict{PkgId, Any}()
+    for pkid in uuids
+        get!(result, pkid) do
+            topo_deps(manifest, pkid)
         end
     end
     return result
 end
 
-function topo_deps(manifest, uuid::UUID)
-    result = Dict{UUID, Any}()
+function topo_deps(manifest, uuid::PkgId)
+    result = Dict{PkgId, Any}()
     for (name, uuid) in get_deps(manifest, uuid)
-        get!(result, uuid) do
+        get!(result, PkgId(uuid, name)) do
             topo_deps(manifest, uuid)
         end
     end
@@ -208,7 +196,7 @@ end
 
 function flat_deps(ctx::Pkg.Types.Context, pkgs::Set{Pkg.Types.PackageSpec})
     manifest = ctx.env.manifest
-    deps = topo_deps(manifest, getfield.(pkgs, :uuid))
+    deps = topo_deps(manifest, to_pkgid.(pkgs))
     flat = flatten_deps(deps)
     return resolve_packages(ctx, flat)
 end

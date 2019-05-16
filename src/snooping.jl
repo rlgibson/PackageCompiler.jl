@@ -138,16 +138,18 @@ function snoop_packages(
     snoopfiles = get_snoopfile.(pkgs)
     packages = flat_deps(ctx, packages)
     direct_test_deps = test_dependencies(pkgs)
-    missing_pkgs = not_installed([direct_test_deps...])
-    if install
-        Pkg.API.add_or_develop(ctx, missing_pkgs, mode = :add)
-    else
-        @warn("The following test dependencies are not installed: $missing_pkgs.
-        Snooping based on test scripts will likely fail.
-        Please use `install = true` or install those packages manually")
+    if !isempty(direct_test_deps)
+        missing_pkgs = not_installed([direct_test_deps...])
+        if install
+            Pkg.API.add_or_develop(ctx, missing_pkgs, mode = :add)
+        else
+            @warn("The following test dependencies are not installed: $missing_pkgs.
+            Snooping based on test scripts will likely fail.
+            Please use `install = true` or install those packages manually")
+        end
+        # get all recursive test deps:
+        union!(packages, flat_deps(ctx, direct_test_deps))
     end
-    # get all recursive test deps:
-    union!(packages, flat_deps(ctx, direct_test_deps))
     # remove blacklisted packages from full list of packages
     imports = setdiff(to_pkgid.(packages), resolved_blacklist(ctx))
     inits = intersect(imports, resolved_inits(ctx))
