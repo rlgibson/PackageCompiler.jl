@@ -275,6 +275,11 @@ function build_shared(s_file, o_file, init_shared, builddir, verbose, optimize, 
         #include <stdio.h>
         #include "uv.h"
         #include "julia.h"
+
+        #ifdef JULIA_DEFINE_FAST_TLS // only available in Julia v0.7 and above
+        JULIA_DEFINE_FAST_TLS()
+        #endif
+
         extern void* PyInitHello();
         void init_jl_runtime() // alternate name for jl_init_with_image, with hardcoded library name
         {
@@ -288,6 +293,8 @@ function build_shared(s_file, o_file, init_shared, builddir, verbose, optimize, 
         }
         void* PyInit_hello(void)
         {
+            // initialization
+            libsupport_init();
             init_jl_runtime();
             return PyInitHello();
         }
