@@ -261,5 +261,6 @@ function julia_code_cmd(
     file = sysimg_folder("run_julia_code.jl")
     open(io-> println(io, code), file, "w")
     push!(cmd.exec, file)
+    @show cmd
     cmd
 end
