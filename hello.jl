@@ -1,9 +1,10 @@
 # hello.jl
 using Libdl
 
-global_store = []
 hello = "hello"
 docstring = "A hello module"
+
+global_store = []
 
 const Py_ssize_t = Clong
 
