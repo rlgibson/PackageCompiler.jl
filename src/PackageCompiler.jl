@@ -126,7 +126,7 @@ function create_fresh_base_sysimage(stdlibs::Vector{String}; cpu_target::String)
         cmd = `$(get_julia_cmd()) --cpu-target $cpu_target --output-ji $tmp_corecompiler_ji
                                   -g0 -O0 $compiler_source_path`
         @debug "running $cmd"
-        read(cmd)
+        run(cmd)
 
         # Use that to create sys.ji
         new_sysimage_content = rewrite_sysimg_jl_only_needed_stdlibs(stdlibs)
@@ -137,7 +137,7 @@ function create_fresh_base_sysimage(stdlibs::Vector{String}; cpu_target::String)
                                       --sysimage=$tmp_corecompiler_ji
                                       -g1 -O0 --output-ji=$tmp_sys_ji $new_sysimage_source_path`
             @debug "running $cmd"
-            read(cmd)
+            run(cmd)
         finally
             rm(new_sysimage_source_path; force=true)
         end
