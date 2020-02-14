@@ -43,22 +43,6 @@ function bitflag()
     end
 end
 
-function march()
-    if Sys.ARCH === :i686
-        return "-march=pentium4"
-    elseif Sys.ARCH === :x86_64
-        return "-march=x86-64"
-    elseif Sys.ARCH === :arm
-        return "-march=armv7-a+simd"
-    elseif Sys.ARCH === :aarch64
-        return "-march=armv8-a+crypto+simd"
-    elseif Sys.ARCH === :powerpc64le
-        return nothing
-    else
-        return nothing
-    end
-end
-
 # Overwriting an open file is problematic in Windows
 # so move it out of the way first
 function move_default_sysimage_if_windows()
@@ -438,8 +422,7 @@ function create_sysimg_from_object_file(input_object::String, sysimage_path::Str
     end
     extra = Sys.iswindows() ? `-Wl,--export-all-symbols` : ``
     compiler = get_compiler()
-    m = something(march(), ``)
-    cmd = `$compiler $(bitflag()) $m -shared -L$(julia_libdir) -o $sysimage_path $o_file -ljulia $extra`
+    cmd = `$compiler $(bitflag()) -shared -L$(julia_libdir) -o $sysimage_path $o_file -ljulia $extra`
     @debug "running $cmd"
     windows_compiler_artifact_path(compiler) do
         run(cmd)
@@ -643,8 +626,7 @@ function create_executable_from_sysimg(;sysimage_path::String,
         rpath = `-Wl,-rpath,\$ORIGIN:\$ORIGIN/../lib`
     end
     compiler = get_compiler()
-    m = something(march(), ``)
-    cmd = `$compiler -DJULIAC_PROGRAM_LIBNAME=$(repr(sysimage_path)) $(bitflag()) $m -o $(executable_path) $(wrapper) $(sysimage_path) -O2 $rpath $flags`
+    cmd = `$compiler -DJULIAC_PROGRAM_LIBNAME=$(repr(sysimage_path)) $(bitflag()) -o $(executable_path) $(wrapper) $(sysimage_path) -O2 $rpath $flags`
     @debug "running $cmd"
     run(cmd)
     windows_compiler_artifact_path(compiler) do
