@@ -173,7 +173,7 @@ end
 
 # Load packages in a normal julia process to make them precompile "normally"
 function do_ensurecompiled(project, packages, sysimage)
-    use = join("using " .* packages, '\n')
+    use = join("import " .* packages, '\n')
     cmd = `$(get_julia_cmd()) --sysimage=$sysimage --project=$project -e $use`
     @debug "running $cmd"
     read(cmd, String)
