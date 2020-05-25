@@ -198,7 +198,7 @@ function create_sysimg_object_file(object_file::String, packages::Vector{String}
 
     # Handle precompilation
     precompile_statements = ""
-    @debug "running precompilation execution script..."
+    @info "running precompilation execution script..."
     tracefiles = String[]
     for file in (isempty(precompile_execution_file) ? (nothing,) : precompile_execution_file)
         tracefile = run_precompilation_script(project, base_sysimage, file)
@@ -243,7 +243,7 @@ function create_sysimg_object_file(object_file::String, packages::Vector{String}
     # Ensure packages to be put into sysimage are precompiled by loading them in a
     # separate process first.
     if !isempty(packages)
-        do_ensurecompiled(project, packages, base_sysimage)
+        # do_ensurecompiled(project, packages, base_sysimage)
     end
 
     for pkg in packages
@@ -283,12 +283,12 @@ function create_sysimg_object_file(object_file::String, packages::Vector{String}
         """
 
     # finally, make julia output the resulting object file
-    @debug "creating object file at $object_file"
+    @info "creating object file at $object_file"
     @info "PackageCompiler: creating system image object file, this might take a while..."
 
-    cmd = `$(get_julia_cmd()) --cpu-target=$cpu_target
+    cmd = `$(get_julia_cmd()) --cpu-target=$cpu_target --compiled-modules=no
                               --sysimage=$base_sysimage --project=$project --output-o=$(object_file) -e $julia_code`
-    @debug "running $cmd"
+    @info "running $cmd"
     run(cmd)
 end
 
