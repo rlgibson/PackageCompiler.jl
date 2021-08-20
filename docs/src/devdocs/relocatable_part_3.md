@@ -114,8 +114,8 @@ end
 end # module
 ```
 
-It got the same high-level structure as the previous app in the earlier parts.
-The exact details are not so interesting but here a color is set based on the
+It has the same high-level structure as the previous app in the earlier parts.
+The exact details are not so interesting, but here a color is set based on the
 command-line arguments and the `stdin` is written to `stdout` with that color.
 We can see some usage of it:
 
